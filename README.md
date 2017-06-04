@@ -4,7 +4,7 @@ Script for watching iptv with mpv.
 
 INSTALL
 
-	Put in ~/.config/mpv/
+	Put in ~/.config/mpv/scripts/
   
 RUN
 

@@ -5,17 +5,17 @@ Script for watching iptv with mpv.
 INSTALL
 
 	Put in ~/.config/mpv/scripts/
-  
+
 RUN
 
 	mpv --script-opts=iptv=1 playlist.m3u
 
 CONTROL
 
-	\ — to show/hide playlist
-  
-	UP/DOWN — to navigate
+	\ or Mouse right click — to show/hide playlist
+
+	UP/DOWN or Mouse scroll — to navigate
 
 	type with keyboard — to search incrementally
 
-	ENTER — to play
+	ENTER or Mouse left click — to play

@@ -163,28 +163,34 @@ for _,v in ipairs({',','^','$','(',')','%','.','[',']','*','+','-','?','`',"'","
 end
 
 function add_bindings()
-  mp.add_key_binding('UP', 'plsup', up,"repeatable")
-  mp.add_key_binding('DOWN', 'plsdown', down,"repeatable")
+  mp.add_forced_key_binding('UP', 'plsup1', up,"repeatable")
+  mp.add_forced_key_binding('MOUSE_BTN3', 'plsup2', up,"repeatable")
+  mp.add_forced_key_binding('DOWN', 'plsdown1', down,"repeatable")
+  mp.add_forced_key_binding('MOUSE_BTN4', 'plsdown2', down,"repeatable")
   for i,v in ipairs(chars) do
     c=string.char(v)
-    mp.add_key_binding(c, 'search'..v, typing(c),"repeatable")
+    mp.add_forced_key_binding(c, 'search'..v, typing(c),"repeatable")
   end
-  mp.add_key_binding('SPACE', 'search32', typing(' '),"repeatable")
+  mp.add_forced_key_binding('SPACE', 'search32', typing(' '),"repeatable")
     
 --[[    mp.add_key_binding('а', 'search1000', typing('а'),"repeatable")
     mp.add_key_binding('с', 'search1001', typing('с'),"repeatable")]]
 
-  mp.add_key_binding('BS', 'searchbs', backspace,"repeatable")
-  mp.add_key_binding('ENTER', 'plsenter', play)
+  mp.add_forced_key_binding('BS', 'searchbs', backspace,"repeatable")
+  mp.add_forced_key_binding('ENTER', 'plsenter1', play)
+  mp.add_forced_key_binding('MOUSE_BTN0', 'plsenter2', play)
   for i,v in ipairs(cyr_chars) do
-    mp.add_key_binding(v, 'search'..i+1000, typing(v),"repeatable")
+    mp.add_forced_key_binding(v, 'search'..i+1000, typing(v),"repeatable")
   end
 end
 
 function remove_bindings()
-   mp.remove_key_binding('plsup')
-   mp.remove_key_binding('plsdown')
-   mp.remove_key_binding('plsenter')
+   mp.remove_key_binding('plsup1')
+   mp.remove_key_binding('plsup2')
+   mp.remove_key_binding('plsdown1')
+   mp.remove_key_binding('plsdown2')
+   mp.remove_key_binding('plsenter1')
+   mp.remove_key_binding('plsenter2')
    for i,v in ipairs(chars) do
         c=string.char(v)
         mp.remove_key_binding('search'..v)
@@ -409,7 +415,8 @@ if mp.get_opt("iptv") then
   mp.set_property_bool("idle", true)
   mp.set_property_bool("force-window", true)
   mp.register_event("start-file", on_start_file)
-  mp.add_key_binding('\\', 'activate', activate)
+  mp.add_forced_key_binding('\\', 'activate1', activate)
+  mp.add_forced_key_binding('MOUSE_BTN2', 'activate2', activate)
   mp.set_property("fullscreen", "yes")
 end
 

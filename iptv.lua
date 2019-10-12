@@ -15,44 +15,8 @@ local wndend
 local cursor
 local pattern=""
 local is_active
-local is_altkeys
 local is_playlist_loaded
 
-local altkeys={
-  ['a']='ф',
-  ['b']='и',
-  ['c']='с',
-  ['d']='в',
-  ['e']='у',
-  ['f']='а',
-  ['g']='п',
-  ['h']='р',
-  ['i']='ш',
-  ['j']='о',
-  ['k']='л',
-  ['l']='д',
-  ['m']='ь',
-  ['n']='т',
-  ['o']='щ',
-  ['p']='з',
-  ['q']='й',
-  ['r']='к',
-  ['s']='ы',
-  ['t']='е',
-  ['u']='г',
-  ['v']='м',
-  ['w']='ц',
-  ['x']='ч',
-  ['y']='н',
-  ['z']='я',
-  ['`']='ё',
-  [',']='б',
-  ['.']='ю',
-  [';']='ж',
-  ['\'']='э',
-  ['[']='х',
-  [']']='ъ',
-}
 -- UTF-8 lower/upper conversion
 local utf8_lc_uc = {
   ["a"] = "A",
@@ -215,8 +179,6 @@ function add_bindings()
   for i,v in ipairs(cyr_chars) do
     mp.add_key_binding(v, 'search'..i+1000, typing(v),"repeatable")
   end
-  
---  mp.add_key_binding('Ctrl+6', 'searchaltkeys', switchkbrd)
 end
 
 function remove_bindings()
@@ -232,7 +194,6 @@ function remove_bindings()
    for i,v in ipairs(cyr_chars) do
      mp.remove_key_binding('search'..i+1000)
    end
---   mp.remove_key_binding('searchaltkeys')
 end
 
 function activate()
@@ -292,19 +253,10 @@ function resumetimer()
   timer:resume()
 end
 
-function switchkbrd()
-  is_altkeys = not is_altkeys
-  showplaylist()
-end
-
 function typing(char)
   return function()
            local c=string.lower(char)
-           if is_altkeys then
-             pattern = pattern..( altkeys[c] or c )
-           else
-             pattern = pattern..c
-           end
+           pattern = pattern..c
            filterpls()
            showplaylist()
            resumetimer()
@@ -397,11 +349,7 @@ function showplaylist()
   if wndstart+window-1<#plsfiltered then
     msg = msg.."..."
   end
-  if is_altkeys then
-    msg="(ru)/"..pattern.."\n"..msg
-  else
-    msg="/"..pattern.."\n"..msg
-  end
+  msg="/"..pattern.."\n"..msg
   mp.osd_message(msg, osd_time)
 
 end

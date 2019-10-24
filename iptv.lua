@@ -405,7 +405,6 @@ function on_start_file()
     mp.commandv("stop")
     mp.unregister_event(on_start_file)
     activate()
-    
   else
     is_playlist_loaded = true
   end
@@ -417,6 +416,5 @@ if mp.get_opt("iptv") then
   mp.register_event("start-file", on_start_file)
   mp.add_forced_key_binding('\\', 'activate1', activate)
   mp.add_forced_key_binding('MOUSE_BTN2', 'activate2', activate)
-  mp.set_property("fullscreen", "yes")
 end
 

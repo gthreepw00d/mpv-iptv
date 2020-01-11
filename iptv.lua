@@ -1,6 +1,13 @@
---mp.set_property("time-pos", 20)
-
+--redefine keybindings here if needed; multiple bindings are possible
+local keybinds = {
+            activate = {'\\', 'MOUSE_BTN2'},
+            plsup = {'UP', 'MOUSE_BTN3'},
+            plsdown = {'DOWN', 'MOUSE_BTN4'},
+            plsenter = {'ENTER', 'MOUSE_BTN0'}
+        }
+--hide playlist after specified number of seconds
 local osd_time=10
+--show only specified number of playlist entries
 local window=7
 
 local timer
@@ -162,11 +169,27 @@ for _,v in ipairs({',','^','$','(',')','%','.','[',']','*','+','-','?','`',"'","
   table.insert(chars,string.byte(v))
 end
 
+local keybinder = { 
+  remove = function(action)
+    for i,_ in ipairs(keybinds[action]) do
+      mp.remove_key_binding(action..tostring(i))
+    end
+  end,
+  add = function(action, func, repeatable)
+    for i,key in ipairs(keybinds[action]) do
+      assert(type(func)=="function", "not a function")
+      if repeatable then
+        mp.add_forced_key_binding(key, action..tostring(i), func, "repeatable")
+      else
+        mp.add_forced_key_binding(key, action..tostring(i), func)
+      end
+    end
+  end
+}
+
 function add_bindings()
-  mp.add_forced_key_binding('UP', 'plsup1', up,"repeatable")
-  mp.add_forced_key_binding('MOUSE_BTN3', 'plsup2', up,"repeatable")
-  mp.add_forced_key_binding('DOWN', 'plsdown1', down,"repeatable")
-  mp.add_forced_key_binding('MOUSE_BTN4', 'plsdown2', down,"repeatable")
+  keybinder.add("plsup", up, true)
+  keybinder.add("plsdown", down, true)
   for i,v in ipairs(chars) do
     c=string.char(v)
     mp.add_forced_key_binding(c, 'search'..v, typing(c),"repeatable")
@@ -177,29 +200,25 @@ function add_bindings()
     mp.add_key_binding('с', 'search1001', typing('с'),"repeatable")]]
 
   mp.add_forced_key_binding('BS', 'searchbs', backspace,"repeatable")
-  mp.add_forced_key_binding('ENTER', 'plsenter1', play)
-  mp.add_forced_key_binding('MOUSE_BTN0', 'plsenter2', play)
+  keybinder.add("plsenter", play)
   for i,v in ipairs(cyr_chars) do
     mp.add_forced_key_binding(v, 'search'..i+1000, typing(v),"repeatable")
   end
 end
 
 function remove_bindings()
-   mp.remove_key_binding('plsup1')
-   mp.remove_key_binding('plsup2')
-   mp.remove_key_binding('plsdown1')
-   mp.remove_key_binding('plsdown2')
-   mp.remove_key_binding('plsenter1')
-   mp.remove_key_binding('plsenter2')
-   for i,v in ipairs(chars) do
-        c=string.char(v)
-        mp.remove_key_binding('search'..v)
-   end
-   mp.remove_key_binding('search32')
-   mp.remove_key_binding('searchbs')
-   for i,v in ipairs(cyr_chars) do
-     mp.remove_key_binding('search'..i+1000)
-   end
+  keybinder.remove('plsup')
+  keybinder.remove('plsdown')
+  keybinder.remove('plsenter')
+  for i,v in ipairs(chars) do
+    c=string.char(v)
+    mp.remove_key_binding('search'..v)
+  end
+  mp.remove_key_binding('search32')
+  mp.remove_key_binding('searchbs')
+  for i,v in ipairs(cyr_chars) do
+    mp.remove_key_binding('search'..i+1000)
+  end
 end
 
 function activate()
@@ -414,7 +433,6 @@ if mp.get_opt("iptv") then
   mp.set_property_bool("idle", true)
   mp.set_property_bool("force-window", true)
   mp.register_event("start-file", on_start_file)
-  mp.add_forced_key_binding('\\', 'activate1', activate)
-  mp.add_forced_key_binding('MOUSE_BTN2', 'activate2', activate)
+  keybinder.add("activate", activate)
 end
 

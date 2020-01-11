@@ -19,3 +19,5 @@ CONTROL
 	type with keyboard — to search incrementally
 
 	ENTER or Mouse left click — to play
+
+It is possible to redefine keybindings (for example, to disable  mouse support remove all 'MOUSE_*' values from "keybinds" array in iptv.lua).

@@ -310,15 +310,6 @@ function filterpls()
   cursor=0
 end
 
-function formatentry(v)
-  local t
-  t=v.title or ""
-  if v.current then
-      t = "*"..t
-  end
-  return t
-end
-
 function play()
 --  mp.commandv("playlist-move", wndstart+cursor, 1)
 --  mp.commandv("playlist-clear")
@@ -359,12 +350,17 @@ function showplaylist()
 
   msg=""
   i = wndstart
+  local prefix
   while plsfiltered[i] and i<=wndstart+window-1 do
-    if i==wndstart+cursor then
-      msg = msg..">"
+    if pls[plsfiltered[i]].current then
+      prefix="*"
+    elseif i==wndstart+cursor then
+      prefix=">"
+    else
+      prefix="  "
     end
-    msg = msg..formatentry(pls[plsfiltered[i]]).."\n"
-    i = i+1
+    msg = msg..prefix..(pls[plsfiltered[i]].title or "").."\n"
+    i=i+1
   end
   if wndstart>1 then
     msg = "...\n"..msg

@@ -12,7 +12,7 @@ local window=7
 --fade video when showing playlist
 local fade=false
 --if fade=true; -100 — black, 0 — normal
-local plsbrightness=-50
+local plsbrightness=-70
 -- END OF CONFIGURABLE VARIABLES
 
 local timer
@@ -28,7 +28,6 @@ local cursor
 local pattern=""
 local is_active
 local is_playlist_loaded
-local saved_brtns
 
 -- UTF-8 lower/upper conversion
 local utf8_lc_uc = {
@@ -193,6 +192,22 @@ local keybinder = {
   end
 }
 
+local fader = {
+  saved_brtns,
+  on = function(self)
+    if fade and not self.saved_brtns then
+        self.saved_brtns = mp.get_property("brightness")
+        mp.set_property("brightness", plsbrightness)
+    end
+  end,
+  off = function(self)
+    if fade and self.saved_brtns then
+      mp.set_property("brightness", self.saved_brtns)
+      self.saved_brtns=nil
+    end
+  end
+}
+
 function add_bindings()
   keybinder.add("plsup", up, true)
   keybinder.add("plsdown", down, true)
@@ -235,10 +250,6 @@ function activate()
     return
   else
     is_active=true
-    if fade then
-      saved_brtns = mp.get_property("brightness")
-      mp.set_property("brightness", plsbrightness)
-    end
     showplaylist()
     add_bindings()
     if not timer then
@@ -324,6 +335,7 @@ function play()
 --  mp.commandv("playlist-move", wndstart+cursor, 1)
 --  mp.commandv("playlist-clear")
 --  mp.commandv("playlist-next")
+  fader:off()
   mp.commandv("loadfile",pls[plsfiltered[wndstart+cursor]].filename)
   if plspos then
     pls[plspos].current=false
@@ -387,15 +399,14 @@ end
 
 function shutdown()
   local c
-  if fade then
-    mp.set_property("brightness", saved_brtns)
-  end
+  fader:off()
   remove_bindings()
   is_active=false
   mp.osd_message("", 1)
 end
 
 function down()
+  fader:on()
   if cursor >= #plsfiltered-1 then return end
   if cursor<window-1 then
     cursor=cursor+1
@@ -410,6 +421,7 @@ function down()
 end
 
 function up()
+  fader:on()
   if cursor>0 then
     cursor=cursor-1
     showplaylist()

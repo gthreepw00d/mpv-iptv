@@ -9,6 +9,11 @@ local keybinds = {
 local osd_time=10
 --show only specified number of playlist entries
 local window=7
+--fade video when showing playlist
+local fade=false
+--if fade=true; -100 — black, 0 — normal
+local plsbrightness=-50
+-- END OF CONFIGURABLE VARIABLES
 
 local timer
 -- pls — список элементов плейлиста
@@ -23,6 +28,7 @@ local cursor
 local pattern=""
 local is_active
 local is_playlist_loaded
+local saved_brtns
 
 -- UTF-8 lower/upper conversion
 local utf8_lc_uc = {
@@ -229,6 +235,10 @@ function activate()
     return
   else
     is_active=true
+    if fade then
+      saved_brtns = mp.get_property("brightness")
+      mp.set_property("brightness", plsbrightness)
+    end
     showplaylist()
     add_bindings()
     if not timer then
@@ -376,11 +386,13 @@ function showplaylist()
 end
 
 function shutdown()
-   local c
-   remove_bindings()
-
-   is_active=false
-   mp.osd_message("", 1)
+  local c
+  if fade then
+    mp.set_property("brightness", saved_brtns)
+  end
+  remove_bindings()
+  is_active=false
+  mp.osd_message("", 1)
 end
 
 function down()

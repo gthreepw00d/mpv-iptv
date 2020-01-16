@@ -250,6 +250,7 @@ function activate()
     return
   else
     is_active=true
+    fader:on()
     showplaylist()
     add_bindings()
     if not timer then

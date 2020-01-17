@@ -443,6 +443,10 @@ function on_start_file()
       plsfiltered=tablekeys(pls)
     end
     mp.commandv("stop")
+    --need to mark first entry non-current (mpv bug?)
+    if pls[1] then
+      pls[1].current = false
+    end
     mp.unregister_event(on_start_file)
     activate()
   else

@@ -13,18 +13,12 @@ local window=7
 local fade=false
 --if fade=true; -100 — black, 0 — normal
 local plsbrightness=-70
+--favorites get promotion to the top of the pls
+local favorites = {}
 -- END OF CONFIGURABLE VARIABLES
 
 local timer
--- pls — список элементов плейлиста
-local pls
--- plsfiltered — список индексов выбранных фильтром элементов плейлиста
-local plsfiltered
 --local plscount
-local plspos
-local wndstart
-local wndend
-local cursor
 local pattern=""
 local is_active
 local is_playlist_loaded
@@ -208,6 +202,123 @@ local fader = {
   end
 }
 
+local playlister = {
+-- pls — список элементов плейлиста
+  pls,
+-- plsfiltered — список индексов выбранных фильтром элементов плейлиста
+  plsfiltered,
+  plspos,
+  wndstart,
+  wndend,
+  cursor,
+
+  init = function(self)
+    if not self.pls then
+      self.pls = mp.get_property_native("playlist")
+      pattern = ""
+      self.plsfiltered = tablekeys(self.pls)
+    end
+    mp.commandv("stop")
+    --need to mark first entry non-current (mpv bug?)
+    if self.pls[1] then
+      self.pls[1].current = false
+    end
+    if favorites and #favorites>0 then
+        table.sort(self.pls,function(i,j) return in_array(favorites,i.title) 
+                                                 and not in_array(favorites,j.title) 
+                            end)
+    end
+  end,
+
+  show = function(self)
+    local i
+    local newpos
+    local msg
+    --media-title
+    --playlist t[2].title
+
+    if not self.plsfiltered then
+      return
+    end
+    if not self.plspos then
+      self.plspos=mp.get_property_native("playlist-pos-1")
+      --plscount=mp.get_property_native("playlist-count")
+    end
+    if not self.wndstart or not self.cursor then
+      self.wndstart=1
+      self.cursor=0
+    end
+  
+    msg=""
+    i = self.wndstart
+    local prefix
+    while self.plsfiltered[i] and i<=self.wndstart+window-1 do
+      if self.pls[self.plsfiltered[i]].current then
+        prefix="*"
+      elseif i==self.wndstart+self.cursor then
+        prefix=">"
+      else
+        prefix="  "
+      end
+      msg = msg..prefix..(self.pls[self.plsfiltered[i]].title or "").."\n"
+      i=i+1
+    end
+    if self.wndstart>1 then
+      msg = "...\n"..msg
+    else
+      msg = " \n"..msg
+    end
+    if self.wndstart+window-1<#self.plsfiltered then
+      msg = msg.."..."
+    end
+    msg="/"..pattern.."\n"..msg
+    mp.osd_message(msg, osd_time)
+  end,
+
+  filter = function(self)
+    self.plsfiltered={}
+    for i,v in ipairs(self.pls) do
+      if string.match(mylower(v.title),'.*'..prepat(pattern)..'.*') then
+        table.insert(self.plsfiltered,i)
+      end
+    end
+    self.wndstart=1
+    self.cursor=0
+  end,
+
+  down = function(self)
+    if self.cursor >= #self.plsfiltered-1 then return end
+    if self.cursor<window-1 then
+      self.cursor=self.cursor+1
+    else
+      if self.wndstart<#self.plsfiltered-window+1 then
+        self.wndstart=self.wndstart+1
+      end
+    end
+    self.show(self)
+  end,
+  up = function(self)
+    if self.cursor>0 then
+      self.cursor=self.cursor-1
+      self.show(self)
+    else
+      if self.wndstart>1 then
+        self.wndstart=self.wndstart-1
+        self.show(self)
+      end
+    end
+  end,
+
+  play = function(self)
+    mp.commandv("loadfile",self.pls[self.plsfiltered[self.wndstart+self.cursor]].filename)
+    if self.plspos then
+      self.pls[self.plspos].current=false
+    end
+    self.plspos=self.plsfiltered[self.wndstart+self.cursor]
+    self.pls[self.plspos].current=true
+  end
+}
+
 function add_bindings()
   keybinder.add("plsup", up, true)
   keybinder.add("plsdown", down, true)
@@ -243,15 +354,13 @@ function remove_bindings()
 end
 
 function activate()
-  local i
-  local c
   if is_active then
     shutdown()
     return
   else
     is_active=true
     fader:on()
-    showplaylist()
+    playlister:show()
     add_bindings()
     if not timer then
       timer=mp.add_periodic_timer(osd_time, shutdown)
@@ -268,6 +377,15 @@ function tablekeys(t)
     table.insert(result,i)
   end
   return result
+end
+
+function in_array(array, value)
+  for _,v in ipairs(array) do
+    if v==value then
+      return true
+    end
+  end
+  return false
 end
 
 function mylower(s)
@@ -304,8 +422,8 @@ function typing(char)
   return function()
            local c=string.lower(char)
            pattern = pattern..c
-           filterpls()
-           showplaylist()
+           playlister:filter()
+           playlister:show()
            resumetimer()
          end
 end
@@ -315,21 +433,10 @@ function backspace()
 --    pattern = string.sub(pattern,1,-2)
 -- for unicode
     pattern = string.match(pattern,"(.*)"..utf8_char.."$")
-    filterpls()
-    showplaylist()
+    playlister:filter()
+    playlister:show()
     resumetimer()
   end
-end
-
-function filterpls()
-  plsfiltered={}
-  for i,v in ipairs(pls) do
-    if string.match(mylower(v.title),'.*'..prepat(pattern)..'.*') then
-      table.insert(plsfiltered,i)
-    end
-  end
-  wndstart=1
-  cursor=0
 end
 
 function play()
@@ -337,69 +444,12 @@ function play()
 --  mp.commandv("playlist-clear")
 --  mp.commandv("playlist-next")
   fader:off()
-  mp.commandv("loadfile",pls[plsfiltered[wndstart+cursor]].filename)
-  if plspos then
-    pls[plspos].current=false
-  end
-  plspos=plsfiltered[wndstart+cursor]
-  pls[plspos].current=true
-  showplaylist()
+  playlister:play()
+  playlister:show()
   resumetimer()
 end
 
-function showplaylist()
-  local i
-  local newpos
-  local msg
-  --media-title
-  --playlist t[2].title
-
---[[  if not pls then
-    pls=mp.get_property_native("playlist")
-    pattern=""
-    plsfiltered=tablekeys(pls)
-  end]]
-  if not plsfiltered then
-    return
-  end
-  if not plspos then
-    plspos=mp.get_property_native("playlist-pos-1")
-    --plscount=mp.get_property_native("playlist-count")
-  end
-  if not wndstart or not cursor then
-    wndstart=1
-    cursor=0
-  end
-
-  msg=""
-  i = wndstart
-  local prefix
-  while plsfiltered[i] and i<=wndstart+window-1 do
-    if pls[plsfiltered[i]].current then
-      prefix="*"
-    elseif i==wndstart+cursor then
-      prefix=">"
-    else
-      prefix="  "
-    end
-    msg = msg..prefix..(pls[plsfiltered[i]].title or "").."\n"
-    i=i+1
-  end
-  if wndstart>1 then
-    msg = "...\n"..msg
-  else
-    msg = " \n"..msg
-  end
-  if wndstart+window-1<#plsfiltered then
-    msg = msg.."..."
-  end
-  msg="/"..pattern.."\n"..msg
-  mp.osd_message(msg, osd_time)
-
-end
-
 function shutdown()
-  local c
   fader:off()
   remove_bindings()
   is_active=false
@@ -408,45 +458,19 @@ end
 
 function down()
   fader:on()
-  if cursor >= #plsfiltered-1 then return end
-  if cursor<window-1 then
-    cursor=cursor+1
-    showplaylist()
-  else
-    if wndstart<#plsfiltered-window+1 then
-      wndstart=wndstart+1
-    end
-    showplaylist()
-  end
+  playlister:down()
   resumetimer()
 end
 
 function up()
   fader:on()
-  if cursor>0 then
-    cursor=cursor-1
-    showplaylist()
-  else
-    if wndstart>1 then
-      wndstart=wndstart-1
-      showplaylist()
-    end
-  end
+  playlister:up()
   resumetimer()
 end
 
 function on_start_file()
   if is_playlist_loaded then
-    if not pls then
-      pls=mp.get_property_native("playlist")
-      pattern=""
-      plsfiltered=tablekeys(pls)
-    end
-    mp.commandv("stop")
-    --need to mark first entry non-current (mpv bug?)
-    if pls[1] then
-      pls[1].current = false
-    end
+    playlister:init()
     mp.unregister_event(on_start_file)
     activate()
   else

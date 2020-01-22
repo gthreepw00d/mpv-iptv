@@ -215,8 +215,6 @@ local playlister = {
   init = function(self)
     if not self.pls then
       self.pls = mp.get_property_native("playlist")
-      pattern = ""
-      self.plsfiltered = tablekeys(self.pls)
     end
     mp.commandv("stop")
     --need to mark first entry non-current (mpv bug?)
@@ -224,10 +222,10 @@ local playlister = {
       self.pls[1].current = false
     end
     if favorites and #favorites>0 then
-        table.sort(self.pls,function(i,j) return in_array(favorites,i.title) 
-                                                 and not in_array(favorites,j.title) 
-                            end)
+      self:sortfavs()
     end
+    pattern = ""
+    self.plsfiltered = tablekeys(self.pls)
   end,
 
   show = function(self)
@@ -273,6 +271,23 @@ local playlister = {
     end
     msg="/"..pattern.."\n"..msg
     mp.osd_message(msg, osd_time)
+  end,
+
+  sortfavs = function(self)
+    --favorites bubbles to the top
+    local favs={}
+    local nonfavs={}
+    for _,v in ipairs(self.pls) do
+      if in_array(favorites,v.title) then
+        favs[#favs+1] = v
+      else
+        nonfavs[#nonfavs+1] = v
+      end
+    end
+    for i=1,#nonfavs do
+      favs[#favs+1] = nonfavs[i]
+    end
+    self.pls = favs
   end,
 
   filter = function(self)

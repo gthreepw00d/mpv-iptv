@@ -1,21 +1,24 @@
 --redefine keybindings here if needed; multiple bindings are possible
-local keybinds = {
+keybinds = {
             activate = {'\\', 'MOUSE_BTN2'},
             plsup = {'UP', 'MOUSE_BTN3'},
             plsdown = {'DOWN', 'MOUSE_BTN4'},
             plsenter = {'ENTER', 'MOUSE_BTN0'}
         }
 --hide playlist after specified number of seconds
-local osd_time=10
+osd_time=10
 --show only specified number of playlist entries
-local window=7
+window=7
 --fade video when showing playlist
-local fade=false
+fade=false
 --if fade=true; -100 — black, 0 — normal
-local plsbrightness=-70
+plsbrightness=-70
 --favorites get promotion to the top of the pls
-local favorites = {}
+favorites = {}
 -- END OF CONFIGURABLE VARIABLES
+
+-- put your settings in (SCRIPTS DIR)/_iptvconf.lua
+pcall(require, "_iptvconf")
 
 local timer
 --local plscount

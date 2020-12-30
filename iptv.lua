@@ -238,10 +238,6 @@ local playlister = {
     if not self.plsfiltered then
       return
     end
-    if not self.plspos then
-      self.plspos=mp.get_property_native("playlist-pos-1")
-      --plscount=mp.get_property_native("playlist-count")
-    end
     if not self.wndstart or not self.cursor then
       self.wndstart=1
       self.cursor=0
